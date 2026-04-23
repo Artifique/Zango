@@ -1,0 +1,201 @@
+You are a senior UI/UX engineer with 10+ years of experience building 
+financial and crypto dashboards. Build a complete, production-ready 
+Next.js 14 (App Router) dashboard for a crypto reselling agent platform.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+PROJECT CONTEXT
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Platform: "CryptoAgent" — a multi-role crypto reselling network.
+Roles: DIRECTEUR (full oversight), AGENT_PRINCIPAL (my role — sell + 
+supervise), AGENT (confirm payments).
+
+Core workflow:
+1. Client requests crypto purchase
+2. Agent creates a transaction, shares his agent number
+3. Client pays and sends a payment screenshot (capture)
+4. Agent requests confirmation from a colleague
+5. After confirmation, agent sends crypto to client's wallet
+6. Director monitors ALL operations in real time
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+AESTHETIC DIRECTION
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Theme: Dark, premium, financial-grade — inspired by Bloomberg Terminal 
+meets Web3. NOT generic crypto purple gradients.
+
+Visual identity:
+- Background: deep charcoal #0D0F14 with subtle grid texture overlay
+- Primary accent: electric teal #00E5C3
+- Secondary accent: warm amber #F5A623 (for warnings/pending states)
+- Danger: #FF4D6A
+- Success: #00C896
+- Cards: glass-morphism with 1px teal border, backdrop-blur
+- Typography: 'Syne' (bold display headers) + 'IBM Plex Mono' 
+  (numbers/IDs/amounts) — import from Google Fonts
+- All monetary values in IBM Plex Mono for that trading terminal feel
+- Subtle animated grid background (CSS only, no canvas)
+- Micro-animations: staggered card entry (0.1s delay each), 
+  value counters animating on load, status badges pulsing
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+LAYOUT (AGENT_PRINCIPAL VIEW — default)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Left sidebar (240px, fixed):
+- Logo "CryptoAgent" with animated teal dot blinking
+- Navigation links with icons:
+  · Dashboard (home)
+  · Transactions (with badge count for pending)
+  · Captures (pending uploads)
+  · Confirmations (awaiting)
+  · Agents (colleagues oversight)
+  · Mon Solde (my balance)
+  · Paramètres
+- Bottom: user avatar + name + role badge + logout
+
+Top header bar:
+- Page title (dynamic)
+- Right: global search + notification bell (with red dot) + date/time 
+  live updating
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+MAIN DASHBOARD PAGE — KPI ROW (top)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+4 glassmorphism stat cards in a responsive grid:
+
+Card 1 — "Transactions Aujourd'hui"
+  value: 12 | icon: activity wave | teal accent
+  sub: +3 vs hier (green up arrow)
+
+Card 2 — "En attente de confirmation"  
+  value: 4 | icon: clock | amber accent pulsing
+  sub: 2 capturées, 2 en cours
+
+Card 3 — "Volume total (USDT)"
+  value: 4,820.50 in IBM Plex Mono | icon: trending up | teal
+  sub: ce mois: 42,100 USDT
+
+Card 4 — "Mon Solde Disponible"
+  value: 1,240.00 USDT | icon: wallet | green
+  sub: Dernier appro: 500 USDT
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+MAIN DASHBOARD PAGE — MIDDLE SECTION
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Left panel (60%): "Transactions récentes"
+- Table with columns: #REF | Client | Crypto | Montant | Statut | Date | Actions
+- Status badges with distinct colors + icons:
+  · EN_ATTENTE → gray pill
+  · CAPTURE_RECUE → amber pulsing pill  
+  · EN_CONFIRMATION → blue pill
+  · VALIDÉ → teal pill
+  · ENVOYÉ → green pill with checkmark
+  · ANNULÉ → red pill
+- Each row has action button: "Voir" opens a slide-over panel (not modal)
+- Slide-over shows: transaction details, capture thumbnail, confirmation 
+  timeline, wallet address, action buttons (Valider / Annuler)
+- Zebra striping with very subtle difference (not harsh)
+- Hover row: teal left-border highlight, slight bg shift
+- Pagination at bottom
+
+Right panel (40%): "Activité en temps réel"
+- Live feed of events (fake WebSocket simulation with setInterval):
+  · Agent X confirmed transaction #TXN-0042
+  · New capture received for #TXN-0039
+  · Transaction #TXN-0041 sent to wallet
+- Each event as a timeline item with icon + timestamp
+- Smooth slide-in animation for each new event
+- "Voir tout" link at bottom
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+MAIN DASHBOARD PAGE — BOTTOM SECTION
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Left (60%): Bar chart "Volume par jour (7 derniers jours)"
+- Use Recharts: BarChart with custom teal fill, amber for today's bar
+- Y-axis in USDT, IBM Plex Mono labels
+- Tooltip: dark glass tooltip with amount + nb transactions
+
+Right (40%): "Performance agents" (visible for AGENT_PRINCIPAL role)
+- List of colleague agents with: avatar initials + name + 
+  nb transactions today + status indicator (online dot)
+- Clicking an agent opens a drawer with their last 5 transactions
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+DIRECTEUR VIEW (role-switching)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+When role = DIRECTEUR, the dashboard adds:
+- Extra KPI card: "Agents actifs" (8/10 online)  
+- An "Opérations globales" section replacing agent performance panel
+  showing ALL agents' activity merged in one feed
+- Agent management tab: table of all agents with balance, 
+  transaction count, status toggle (actif/inactif) + 
+  "Approvisionner" button opening a slide-over form
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+TRANSACTION DETAIL SLIDE-OVER
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Right side panel (480px wide) sliding over main content:
+- Header: #REF badge + status pill + date
+- Section "Détails": montant, crypto type, numéro agent utilisé, 
+  wallet client
+- Section "Capture de paiement": image thumbnail (click to enlarge 
+  in lightbox), upload date, "capture valide" green badge
+- Section "Timeline de confirmation":
+  vertical stepper showing:
+  1. Transaction créée ✓
+  2. Capture reçue ✓  
+  3. Confirmation demandée ✓
+  4. Confirmation reçue ✓ (by Agent name)
+  5. Crypto envoyées ✓
+  Each step: icon + label + agent name + timestamp
+- Action buttons at bottom: 
+  "Demander confirmation" (amber) | "Valider & Envoyer" (teal) | 
+  "Annuler" (red ghost)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+NEW TRANSACTION MODAL (button top-right)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+- Dark glass modal (blur background)
+- Form fields:
+  · Client name (text)
+  · Client contact (text)
+  · Crypto type (select: USDT / BTC / ETH / BNB)
+  · Montant (number with currency formatting)
+  · Numéro agent (auto-filled with my number, editable dropdown)
+  · Wallet adresse (text)
+- Auto-generate reference on submit
+- Validation with inline error messages (red, IBM Plex Mono)
+- Submit button: full-width teal gradient with loading spinner
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+TECHNICAL REQUIREMENTS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+- Next.js 14 App Router, TypeScript strict mode
+- Tailwind CSS with custom theme extension (teal, amber, charcoal vars)
+- shadcn/ui for base components (customized, not default)
+- Recharts for all charts
+- Framer Motion for page transitions + slide-overs + staggered cards
+- lucide-react for icons (consistent set)
+- Mock data with realistic crypto transaction data (10+ transactions)
+- Role simulation: toggle button in header to switch 
+  AGENT_PRINCIPAL ↔ DIRECTEUR for demo purposes
+- All monetary values: toLocaleString with 2 decimal places
+- Responsive: works on tablet (768px+), optimized for desktop
+- Accessible: proper aria labels, focus visible, keyboard navigation
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+IMPORTANT CODE RULES
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+- Single file output if possible (for artifact), or clearly separated 
+  components if multi-file
+- No placeholder "TODO" — all sections fully implemented
+- Mock data must look REAL: proper USDT amounts (100–5000 range), 
+  realistic wallet addresses (0x...), French client names
+- The animated background grid: CSS only using 
+  background-image: linear-gradient() pattern, subtle opacity 0.03
+- IBM Plex Mono loaded via next/font/google
+- All status transitions must be visually distinct and beautiful
+- "Demander confirmation" action sends a real-time notification 
+  to the mock colleague in the activity feed
+
+Deliver a dashboard that looks like it was built by a €150/hr 
+agency for a fintech startup. Every pixel intentional.
