@@ -16,7 +16,7 @@ const ibmPlexMono = IBM_Plex_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "CryptoAgent | Dashboard Premium",
+  title: "Kalyce | Dashboard Premium",
   description: "Tableau de bord financier pour revente de crypto-monnaies",
 };
 

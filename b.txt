@@ -1,0 +1,11 @@
+Je veux que le systeme de sidebar soit enlever dans le sidebar , je dois voir une historique des 
+transaction, mettant , la date, usd , le taux,l agent, scrollable et avec possibilité rechercher dans 
+cette historiques ( c est une historique des transactions), de plus pour le reste de la page , en bas du 
+top bar ,je veux que les onglets Clients , Taux, notification, et nouvelle transaction soient  des boutons, 
+donc juste en bas de ces boutons, on a la table des transaction, avec les champs montant, taux , usd , clients
+et agent, avec une barre de recherche pour les transaction sur la table et une Pagination
+de plus en bas de cette table , il faut des metriques (card) comme Total xof, Total Vendu,Total reçu,
+Restant jour precedant, donc les boutons client, Taux, et Nouvelle transaction ouvre des modal , pour 
+le client , il faut les champs id (autogenerer ) et Nom complet, pour la transaction , il faut(montant , usd, taux(selectionnable),client(selectionnable, et agent(selectionnable)))
+donc seul le directeur verra la page agent avec possibilite d ajouter des agents , et il est le seul qui en cliquant sur 
+le bouton taux verra le formulaire d ajout , 

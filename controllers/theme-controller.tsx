@@ -9,7 +9,7 @@ interface ThemeControllerValue {
   toggleTheme: () => void;
 }
 
-const STORAGE_KEY = "cryptoagent-theme";
+const STORAGE_KEY = "kalyce-theme";
 const ThemeControllerContext = createContext<ThemeControllerValue | null>(null);
 
 export function ThemeControllerProvider({ children }: { children: React.ReactNode }) {

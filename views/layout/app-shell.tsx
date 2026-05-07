@@ -3,14 +3,13 @@
 import { useEffect } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { Header } from "../../components/layout/header";
-import { Sidebar } from "../../components/layout/sidebar";
 import { useAuthController } from "../../controllers/auth-controller";
 import { PAGE_TITLES } from "../../models/navigation";
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
-  const title = PAGE_TITLES[pathname] ?? "CryptoAgent";
+
   const { isAuthenticated, isBootstrapping } = useAuthController();
 
   useEffect(() => {
@@ -28,10 +27,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <div className="min-h-screen flex">
-      <Sidebar />
+    <div className="min-h-screen flex flex-col">
       <main className="flex-1 min-w-0 flex flex-col">
-        <Header title={title} />
+        <Header />
         <div className="flex-1 p-8 overflow-y-auto">{children}</div>
       </main>
     </div>

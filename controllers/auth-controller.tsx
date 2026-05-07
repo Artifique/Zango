@@ -13,7 +13,7 @@ interface AuthControllerValue extends AuthState {
   logout: () => void;
 }
 
-const STORAGE_KEY = "cryptoagent-auth";
+const STORAGE_KEY = "kalyce-auth";
 const AuthControllerContext = createContext<AuthControllerValue | null>(null);
 
 export function AuthControllerProvider({ children }: { children: React.ReactNode }) {

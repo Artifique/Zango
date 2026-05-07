@@ -1,52 +1,49 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { 
   LayoutDashboard, 
   ArrowRightLeft, 
-  Image as ImageIcon, 
-  CheckCircle2, 
   Users, 
-  Wallet, 
+  History, 
+  DollarSign, 
   Bell,
-  Settings, 
   LogOut 
-} from "lucide-react";
+} from "lucide-react"; 
 import { cn } from "../../lib/utils";
 import { useAuthController } from "../../controllers/auth-controller";
 import { useRoleController } from "../../controllers/role-controller";
-
-const NAV_ITEMS = [
-  { label: "Dashboard", icon: LayoutDashboard, href: "/", badge: null },
-  { label: "Transactions", icon: ArrowRightLeft, href: "/transactions", badge: 4 },
-  { label: "Captures", icon: ImageIcon, href: "/captures", badge: 2 },
-  { label: "Confirmations", icon: CheckCircle2, href: "/confirmations", badge: null },
-  { label: "Notifications", icon: Bell, href: "/notifications", badge: 3 },
-  { label: "Agents", icon: Users, href: "/agents", badge: null },
-  { label: "Mon Solde", icon: Wallet, href: "/balance", badge: null },
-  { label: "Paramètres", icon: Settings, href: "/settings", badge: null },
-];
+import { NAV_ITEMS, NavigationItem } from "../../models/navigation"; 
 
 export function Sidebar() {
   const pathname = usePathname();
   const { role } = useRoleController();
   const { username, logout } = useAuthController();
 
+  // Filter navigation items based on user role
+  const filteredNavItems = NAV_ITEMS.filter((item) => {
+    if (item.href === "/agents" && role !== "DIRECTEUR") {
+      return false;
+    }
+    return true;
+  });
+
   return (
     <aside className="sticky top-0 h-screen w-[240px] shrink-0 border-r border-border bg-charcoal flex flex-col z-30">
-      <div className="p-6 flex items-center gap-3">
-        <div className="w-8 h-8 rounded-lg bg-teal flex items-center justify-center">
-          <Wallet className="w-5 h-5 text-charcoal" />
+      <div className="p-6 flex flex-col items-center gap-3">
+        <div className="w-16 h-16 rounded-lg flex items-center justify-center">
+           <Image src="/logo.png" alt="Kalyce Logo" width={64} height={64} className="object-contain" />
         </div>
         <div className="flex items-center gap-1.5">
-          <span className="font-syne font-bold text-xl tracking-tight">CryptoAgent</span>
+          <span className="font-syne font-bold text-xl tracking-tight">alyce</span>
           <div className="w-2 h-2 rounded-full bg-teal animate-blink-dot" />
         </div>
       </div>
 
       <nav className="flex-1 px-4 py-4 space-y-1">
-        {NAV_ITEMS.map((item) => (
+        {filteredNavItems.map((item: NavigationItem) => (
           <Link
             key={item.href}
             href={item.href}
@@ -64,11 +61,6 @@ export function Sidebar() {
               )} />
               <span className="font-medium text-sm">{item.label}</span>
             </div>
-            {item.badge && (
-              <span className="bg-amber text-charcoal font-mono text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center">
-                {item.badge}
-              </span>
-            )}
           </Link>
         ))}
       </nav>

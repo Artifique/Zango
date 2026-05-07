@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image"; // Import Image component
 import { Lock, User } from "lucide-react";
 import { useAuthController } from "../../controllers/auth-controller";
 
@@ -32,8 +33,11 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen flex items-center justify-center p-6">
       <div className="w-full max-w-md glass-card rounded-2xl p-8 border border-teal/20">
-        <h1 className="text-2xl font-syne font-extrabold mb-2">Connexion CryptoAgent</h1>
-        <p className="text-white/40 text-sm font-mono mb-8">Accès sécurisé à la supervision des opérations.</p>
+        <div className="flex justify-center mb-4">
+          <Image src="/logo.png" alt="Kalyce Logo" width={64} height={64} />
+        </div>
+        <h1 className="text-2xl font-syne font-extrabold mb-2 text-center">Kalyce Dashboard</h1>
+        <p className="text-white/40 text-sm font-mono mb-8 text-center">Accès sécurisé à la supervision des opérations.</p>
 
         <form onSubmit={onSubmit} className="space-y-5">
           <div>

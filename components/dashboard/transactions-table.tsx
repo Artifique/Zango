@@ -1,95 +1,82 @@
 "use client";
 
-import { motion } from "framer-motion";
-import { ExternalLink, MoreVertical, CheckCircle2, Clock, AlertCircle, XCircle, Send } from "lucide-react";
-import { Transaction, TransactionStatus } from "../../types/crypto";
-import { cn, formatCurrency } from "../../lib/utils";
-
-const STATUS_CONFIG: Record<TransactionStatus, { label: string, color: string, icon: any, pulse?: boolean }> = {
-  EN_ATTENTE: { label: "En attente", color: "text-white/40 bg-white/5", icon: Clock },
-  CAPTURE_RECUE: { label: "Capture reçue", color: "text-amber bg-amber/10", icon: AlertCircle, pulse: true },
-  EN_CONFIRMATION: { label: "Confirmation", color: "text-blue-400 bg-blue-400/10", icon: MoreVertical },
-  VALIDÉ: { label: "Validé", color: "text-teal bg-teal/10", icon: CheckCircle2 },
-  ENVOYÉ: { label: "Envoyé", color: "text-success bg-success/10", icon: Send },
-  ANNULÉ: { label: "Annulé", color: "text-danger bg-danger/10", icon: XCircle },
-};
+import { useState, useMemo } from "react";
+import { Search, ChevronLeft, ChevronRight, Download } from "lucide-react";
+import { Transaction } from "../../types/supabase-models";
 
 export function TransactionsTable({ 
-  transactions, 
-  onSelect 
+  transactions 
 }: { 
-  transactions: Transaction[], 
-  onSelect: (tx: Transaction) => void 
+  transactions: Transaction[]
 }) {
+  const [searchTerm, setSearchTerm] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 5;
+
+  const filtered = useMemo(() => {
+    return transactions.filter(t => 
+      t.clientName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      t.agentName?.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  }, [transactions, searchTerm]);
+
+  const paginated = useMemo(() => {
+    const start = (currentPage - 1) * itemsPerPage;
+    return filtered.slice(start, start + itemsPerPage);
+  }, [filtered, currentPage]);
+
   return (
-    <div className="glass-card rounded-2xl overflow-hidden">
-      <div className="p-6 border-b border-white/5 flex items-center justify-between">
-        <h3 className="font-syne font-bold text-lg">Transactions récentes</h3>
-        <button className="text-[10px] font-mono font-bold uppercase tracking-wider text-teal hover:text-teal/70 transition-colors">
-          Voir tout
-        </button>
+    <div className="space-y-4">
+      <div className="relative group w-full md:w-64">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30" />
+        <input
+          type="text"
+          placeholder="Rechercher..."
+          className="w-full bg-white/5 border border-white/10 rounded-xl py-2 pl-10 pr-4 text-sm focus:outline-none focus:border-teal/30"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+        />
       </div>
-      
-      <div className="overflow-x-auto">
+
+      <div className="overflow-x-auto rounded-2xl border border-white/5 bg-white/5">
         <table className="w-full text-left border-collapse">
           <thead>
-            <tr className="border-b border-white/5">
-              <th className="px-6 py-4 text-[10px] font-mono font-bold uppercase tracking-wider text-white/30">#REF</th>
-              <th className="px-6 py-4 text-[10px] font-mono font-bold uppercase tracking-wider text-white/30">Opération</th>
-              <th className="px-6 py-4 text-[10px] font-mono font-bold uppercase tracking-wider text-white/30">Crypto</th>
-              <th className="px-6 py-4 text-[10px] font-mono font-bold uppercase tracking-wider text-white/30">Montant</th>
-              <th className="px-6 py-4 text-[10px] font-mono font-bold uppercase tracking-wider text-white/30">Statut</th>
-              <th className="px-6 py-4 text-[10px] font-mono font-bold uppercase tracking-wider text-white/30 text-right">Actions</th>
+            <tr className="border-b border-white/5 text-[10px] font-mono font-bold uppercase tracking-widest text-white/40">
+              <th className="px-6 py-4">Montant</th>
+              <th className="px-6 py-4">Taux</th>
+              <th className="px-6 py-4">USD</th>
+              <th className="px-6 py-4">Client</th>
+              <th className="px-6 py-4">Agent</th>
+              <th className="px-6 py-4">Date</th>
+              <th className="px-6 py-4 text-right">Actions</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-white/[0.02]">
-            {transactions.map((tx, idx) => {
-              const status = STATUS_CONFIG[tx.status];
-              return (
-                <motion.tr 
-                  key={tx.id}
-                  initial={{ opacity: 0, x: -10 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.1 * idx }}
-                  onClick={() => onSelect(tx)}
-                  className="group hover:bg-white/[0.03] cursor-pointer transition-colors relative"
-                >
-                  <td className="px-6 py-5">
-                    <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-teal opacity-0 group-hover:opacity-100 transition-opacity" />
-                    <span className="font-mono text-xs font-bold text-white/80">{tx.ref}</span>
-                  </td>
-                  <td className="px-6 py-5">
-                    <p className="text-xs font-bold text-white/90">{tx.operationLabel}</p>
-                    <p className="text-[10px] text-white/30 font-mono">Upload: {tx.uploadedByAgent}</p>
-                  </td>
-                  <td className="px-6 py-5">
-                    <span className="text-xs font-mono font-bold text-teal/80 bg-teal/5 px-2 py-1 rounded border border-teal/10">
-                      {tx.cryptoType}
-                    </span>
-                  </td>
-                  <td className="px-6 py-5">
-                    <span className="font-mono text-xs font-bold">{tx.amount.toLocaleString("fr-FR", { minimumFractionDigits: 2 })}</span>
-                  </td>
-                  <td className="px-6 py-5">
-                    <div className={cn(
-                      "flex items-center gap-1.5 px-2.5 py-1 rounded-full w-fit",
-                      status.color,
-                      status.pulse && "animate-pulse-slow"
-                    )}>
-                      <status.icon className="w-3 h-3" />
-                      <span className="text-[10px] font-bold uppercase tracking-wider">{status.label}</span>
-                    </div>
-                  </td>
-                  <td className="px-6 py-5 text-right">
-                    <button className="p-2 rounded-lg bg-white/5 border border-white/10 text-white/40 group-hover:text-teal group-hover:border-teal/30 group-hover:bg-teal/5 transition-all">
-                      <ExternalLink className="w-3 h-3" />
-                    </button>
-                  </td>
-                </motion.tr>
-              );
-            })}
+          <tbody className="divide-y divide-white/5">
+            {paginated.map((tx) => (
+              <tr key={tx.id} className="hover:bg-white/5 transition-colors">
+                <td className="px-6 py-4 font-mono text-sm">{tx.amount.toLocaleString()}</td>
+                <td className="px-6 py-4 font-mono text-sm">{tx.rate || "N/A"}</td>
+                <td className="px-6 py-4 font-mono text-sm">{tx.usdValue?.toLocaleString()}</td>
+                <td className="px-6 py-4 text-sm">{tx.clientName || "N/A"}</td>
+                <td className="px-6 py-4 text-sm">{tx.agentName || "N/A"}</td>
+                <td className="px-6 py-4 text-sm text-white/50">{tx.date}</td>
+                <td className="px-6 py-4 text-right">
+                  <button className="p-2 hover:bg-white/10 rounded-lg text-teal">
+                    <Download className="w-4 h-4" />
+                  </button>
+                </td>
+              </tr>
+            ))}
           </tbody>
         </table>
+      </div>
+
+      <div className="flex items-center justify-between text-xs text-white/40">
+        <span>Page {currentPage} de {Math.ceil(filtered.length / itemsPerPage) || 1}</span>
+        <div className="flex gap-2">
+          <button onClick={() => setCurrentPage(p => Math.max(1, p - 1))} className="p-2 hover:bg-white/5 rounded-lg"><ChevronLeft className="w-4 h-4" /></button>
+          <button onClick={() => setCurrentPage(p => p + 1)} className="p-2 hover:bg-white/5 rounded-lg"><ChevronRight className="w-4 h-4" /></button>
+        </div>
       </div>
     </div>
   );
