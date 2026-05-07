@@ -1,9 +1,13 @@
--- 1. Table des Agents (utilisant auth.users par défaut ou une table liée)
+-- Extension pour UUID si nécessaire
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
+
+-- 1. Table des Agents
 CREATE TABLE agents (
-  id UUID REFERENCES auth.users ON DELETE CASCADE PRIMARY KEY,
+  id UUID REFERENCES auth.users(id) ON DELETE CASCADE PRIMARY KEY,
   nom TEXT NOT NULL,
   email TEXT UNIQUE NOT NULL,
-  role TEXT DEFAULT 'AGENT' CHECK (role IN ('DIRECTEUR', 'AGENT_PRINCIPAL', 'AGENT')),
+  role TEXT DEFAULT 'AGENT'
+    CHECK (role IN ('DIRECTEUR', 'AGENT_PRINCIPAL', 'AGENT')),
   actif BOOLEAN DEFAULT TRUE,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
@@ -19,7 +23,7 @@ CREATE TABLE clients (
 CREATE TABLE rates (
   id SERIAL PRIMARY KEY,
   type TEXT NOT NULL, -- USDT, BTC, etc.
-  valeur NUMERIC(10, 2) NOT NULL,
+  valeur NUMERIC(10,2) NOT NULL,
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
@@ -27,31 +31,76 @@ CREATE TABLE rates (
 CREATE TABLE transactions (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   ref TEXT UNIQUE NOT NULL,
-  montant NUMERIC(15, 2) NOT NULL,
-  taux NUMERIC(10, 2) NOT NULL,
-  usd_value NUMERIC(15, 2) NOT NULL,
+  montant NUMERIC(15,2) NOT NULL,
+  taux NUMERIC(10,2) NOT NULL,
+  usd_value NUMERIC(15,2) NOT NULL,
+
   client_id TEXT REFERENCES clients(id),
   agent_id UUID REFERENCES agents(id),
-  statut TEXT DEFAULT 'EN_ATTENTE' CHECK (statut IN ('EN_ATTENTE', 'EN_CONFIRMATION', 'VALIDÉ', 'ENVOYÉ', 'ANNULÉ')),
+
+  statut TEXT DEFAULT 'EN_ATTENTE'
+    CHECK (
+      statut IN (
+        'EN_ATTENTE',
+        'EN_CONFIRMATION',
+        'VALIDE',
+        'ENVOYE',
+        'ANNULE'
+      )
+    ),
+
   date_transaction TIMESTAMPTZ DEFAULT NOW()
 );
 
 -- 5. Table des Notifications
 CREATE TABLE notifications (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+
   agent_id UUID REFERENCES agents(id),
-  message TEXT NOT NULL,
   tx_id UUID REFERENCES transactions(id),
-  status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'confirmed')),
+
+  message TEXT NOT NULL,
+
+  status TEXT DEFAULT 'pending'
+    CHECK (status IN ('pending', 'confirmed')),
+
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- RLS Policies (Sécurité)
+-- =========================
+-- RLS (Row Level Security)
+-- =========================
+
 ALTER TABLE transactions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE clients ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "Agents peuvent voir leurs transactions" ON transactions
-  FOR SELECT USING (auth.uid() = agent_id);
+-- Les agents voient leurs transactions
+CREATE POLICY "Agents voient leurs transactions"
+ON transactions
+FOR SELECT
+USING (auth.uid() = agent_id);
 
-CREATE POLICY "Directeurs peuvent tout voir" ON transactions
-  FOR ALL USING (EXISTS (SELECT 1 FROM agents WHERE id = auth.uid() AND role = 'DIRECTEUR'));
+-- Les directeurs peuvent tout faire
+CREATE POLICY "Directeurs peuvent tout voir"
+ON transactions
+FOR ALL
+USING (
+  EXISTS (
+    SELECT 1
+    FROM agents
+    WHERE agents.id = auth.uid()
+      AND agents.role = 'DIRECTEUR'
+  )
+);
+
+-- =========================
+-- Initialisation Admin
+-- =========================
+
+-- INSERT INTO agents (id, nom, email, role)
+-- VALUES (
+--   'UUID_UTILISATEUR',
+--   'Administrateur',
+--   'fombadaouda72@gmail.com',
+--   'DIRECTEUR'
+-- );

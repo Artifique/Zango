@@ -1,19 +1,18 @@
 ## Error Type
-Runtime Error
+Build Error
 
 ## Error Message
-supabaseUrl is required.
+Module not found: Can't resolve '@supabase/auth-helpers-nextjs'
 
+## Build Output
+./middleware.ts:1:1
+Module not found: Can't resolve '@supabase/auth-helpers-nextjs'
+> 1 | import { createMiddlewareClient } from '@supabase/auth-helpers-nextjs';
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  2 | import { NextResponse } from 'next/server';
+  3 | import type { NextRequest } from 'next/server';
+  4 |
 
-    at module evaluation (lib/supabase.ts:12:37)
-    at module evaluation (controllers/transaction-controller.tsx:1:1)
-    at module evaluation (app/page.tsx:10:1)
-
-## Code Frame
-  10 | // }
-  11 |
-> 12 | export const supabase = createClient(supabaseUrl, supabaseAnonKey);
-     |                                     ^
-  13 |
+https://nextjs.org/docs/messages/module-not-found
 
 Next.js version: 16.2.3 (Turbopack)
