@@ -27,7 +27,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col" suppressHydrationWarning={true}>
       <main className="flex-1 min-w-0 flex flex-col">
         <Header />
         <div className="flex-1 p-8 overflow-y-auto">{children}</div>

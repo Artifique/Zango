@@ -2,7 +2,9 @@
 
 import { useState, useMemo } from "react";
 import { Search, ChevronLeft, ChevronRight, Download } from "lucide-react";
+import * as XLSX from 'xlsx-js-style';
 import { Transaction } from "../../types/supabase-models";
+import { cn } from "../../lib/utils";
 
 export function TransactionsTable({ 
   transactions 
@@ -26,13 +28,59 @@ export function TransactionsTable({
   }, [filtered, currentPage]);
 
   const exportToExcel = () => {
-    const csv = ["Montant,Taux,USD,Client,Agent,Date", ...transactions.map(t => `${t.amount},${t.rate},${t.usdValue},${t.clientName},${t.agentName},${t.date}`)].join("\n");
-    const blob = new Blob([csv], { type: 'text/csv' });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'transactions.csv';
-    a.click();
+    const totalMontant = transactions.reduce((acc, t) => acc + (Number(t.amount) || 0), 0);
+    const totalUsd = transactions.reduce((acc, t) => acc + (Number(t.usdValue) || 0), 0);
+    const totalRecu = totalMontant * 0.3;
+    const restant = totalMontant * 0.7;
+
+    const dataToExport = transactions.map(t => ({
+      Montant: t.amount || 0,
+      Taux: t.rate || "N/A",
+      USDT: t.usdValue || 0,
+      Client: t.clientName || "N/A",
+      Agent: t.agentName || "N/A",
+      Date: t.date || ""
+    }));
+
+    dataToExport.push({ Montant: "---", Taux: "---", USDT: "---", Client: "---", Agent: "---", Date: "---" } as any);
+    dataToExport.push({ Montant: "Total XOF:", Taux: totalMontant, USDT: "", Client: "", Agent: "", Date: "" } as any);
+    dataToExport.push({ Montant: "Total Vendu (USDT):", Taux: totalUsd, USDT: "", Client: "", Agent: "", Date: "" } as any);
+    dataToExport.push({ Montant: "Total Reçu:", Taux: totalRecu, USDT: "", Client: "", Agent: "", Date: "" } as any);
+    dataToExport.push({ Montant: "Restant:", Taux: restant, USDT: "", Client: "", Agent: "", Date: "" } as any);
+
+    const worksheet = XLSX.utils.json_to_sheet(dataToExport);
+
+    // Style pour l'en-tête et les cellules
+    const borderStyle = { style: 'thin', color: { rgb: "000000" } };
+    const headerStyle = {
+      fill: { fgColor: { rgb: "00E5C3" } },
+      font: { bold: true, color: { rgb: "0D0F14" } },
+      border: { top: borderStyle, bottom: borderStyle, left: borderStyle, right: borderStyle },
+      alignment: { horizontal: "center" }
+    };
+    
+    const cellStyle = {
+      border: { top: borderStyle, bottom: borderStyle, left: borderStyle, right: borderStyle }
+    };
+
+    // Appliquer le style
+    const range = XLSX.utils.decode_range(worksheet['!ref'] || 'A1');
+    for (let R = range.s.r; R <= range.e.r; ++R) {
+      for (let C = range.s.c; C <= range.e.c; ++C) {
+        const address = XLSX.utils.encode_cell({c: C, r: R});
+        if (!worksheet[address]) continue;
+        
+        if (R === 0) {
+          worksheet[address].s = headerStyle;
+        } else {
+          worksheet[address].s = cellStyle;
+        }
+      }
+    }
+
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Transactions");
+    XLSX.writeFile(workbook, "Transactions_Kalyce.xlsx");
   };
 
   return (
@@ -53,26 +101,26 @@ export function TransactionsTable({
         </button>
       </div>
 
-      <div className="overflow-x-auto rounded-2xl border border-white/5 bg-white/5">
+      <div className="overflow-x-auto rounded-xl border border-teal/20 bg-charcoal/50">
         <table className="w-full text-left border-collapse">
           <thead>
-            <tr className="border-b border-white/5 text-[10px] font-mono font-bold uppercase tracking-widest text-white/40">
-              <th className="px-6 py-4">Montant</th>
-              <th className="px-6 py-4">Taux</th>
-              <th className="px-6 py-4">USD</th>
-              <th className="px-6 py-4">Client</th>
-              <th className="px-6 py-4">Agent</th>
+            <tr className="bg-teal/10 border-b border-teal/20 text-[11px] font-bold uppercase tracking-wider text-teal">
+              <th className="px-6 py-4 border-r border-teal/20">Montant</th>
+              <th className="px-6 py-4 border-r border-teal/20">Taux</th>
+              <th className="px-6 py-4 border-r border-teal/20">USDT</th>
+              <th className="px-6 py-4 border-r border-teal/20">Client</th>
+              <th className="px-6 py-4 border-r border-teal/20">Agent</th>
               <th className="px-6 py-4">Date</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-white/5">
+          <tbody className="divide-y divide-teal/10">
             {paginated.map((tx) => (
               <tr key={tx.id} className="hover:bg-white/5 transition-colors">
-                <td className="px-6 py-4 font-mono text-sm">{tx.amount ? tx.amount.toLocaleString() : "0"}</td>
-                <td className="px-6 py-4 font-mono text-sm">{tx.rate || "N/A"}</td>
-                <td className="px-6 py-4 font-mono text-sm">{tx.usdValue ? tx.usdValue.toLocaleString() : "0"}</td>
-                <td className="px-6 py-4 text-sm">{tx.clientName || "N/A"}</td>
-                <td className="px-6 py-4 text-sm">{tx.agentName || "N/A"}</td>
+                <td className="px-6 py-4 font-mono text-sm border-r border-teal/10">{tx.amount ? tx.amount.toLocaleString() : "0"}</td>
+                <td className="px-6 py-4 font-mono text-sm border-r border-teal/10">{tx.rate || "N/A"}</td>
+                <td className="px-6 py-4 font-mono text-sm border-r border-teal/10">{tx.usdValue ? tx.usdValue.toLocaleString() : "0"}</td>
+                <td className="px-6 py-4 text-sm border-r border-teal/10">{tx.clientName || "N/A"}</td>
+                <td className="px-6 py-4 text-sm border-r border-teal/10">{tx.agentName || "N/A"}</td>
                 <td className="px-6 py-4 text-sm text-white/50">{tx.date}</td>
               </tr>
             ))}
