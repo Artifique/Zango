@@ -1,18 +1,19 @@
-## Error Type
-Build Error
+-- Trigger pour créer automatiquement un profil agent lors de l'inscription
+-- 1. Création de la fonction qui insère le profil agent
+CREATE OR REPLACE FUNCTION public.handle_new_user()
+RETURNS trigger AS $$
+BEGIN
+  INSERT INTO public.agents (id, nom, email, role)
+  VALUES (new.id, split_part(new.email, '@', 1), new.email, 'AGENT');
+  RETURN new;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
 
-## Error Message
-Module not found: Can't resolve '@supabase/auth-helpers-nextjs'
+-- 2. Création du trigger qui appelle la fonction après chaque insertion dans auth.users
+DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
+CREATE TRIGGER on_auth_user_created
+  AFTER INSERT ON auth.users
+  FOR EACH ROW EXECUTE PROCEDURE public.handle_new_user();
 
-## Build Output
-./middleware.ts:1:1
-Module not found: Can't resolve '@supabase/auth-helpers-nextjs'
-> 1 | import { createMiddlewareClient } from '@supabase/auth-helpers-nextjs';
-    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  2 | import { NextResponse } from 'next/server';
-  3 | import type { NextRequest } from 'next/server';
-  4 |
-
-https://nextjs.org/docs/messages/module-not-found
-
-Next.js version: 16.2.3 (Turbopack)
+-- Optionnel : Requête pour transformer votre admin existant s'il a été inséré manuellement
+-- UPDATE agents SET role = 'DIRECTEUR' WHERE email = 'fombadaouda72@gmail.com';

@@ -11,22 +11,14 @@ import { useAuthController } from "../../controllers/auth-controller";
 export function Header() {
   const [time, setTime] = useState("--:--");
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const { role, setRole } = useRoleController();
+  const { role, loading: roleLoading } = useRoleController();
   const { theme, toggleTheme } = useThemeController();
   const { username, logout } = useAuthController();
   
   const openClientModal = () => window.dispatchEvent(new CustomEvent('open-client-modal'));
   const openTxModal = () => window.dispatchEvent(new CustomEvent('open-tx-modal'));
 
-  useEffect(() => {
-    const updateTime = () => {
-      const now = new Date();
-      setTime(now.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" }));
-    };
-    updateTime();
-    const timer = setInterval(updateTime, 1000);
-    return () => clearInterval(timer);
-  }, []);
+  // ... (useEffect time)
 
   const NavButtons = () => (
     <>
@@ -36,24 +28,26 @@ export function Header() {
       <button onClick={openClientModal} className="flex items-center gap-2 bg-teal/10 text-teal text-sm font-bold px-3 py-2 rounded-lg hover:bg-teal-hover hover:text-white transition-colors">
         <Users className="w-4 h-4" /> Clients
       </button>
-      {role === "DIRECTEUR" && (
-        <Link href="/taux" className="flex items-center gap-2 bg-teal/10 text-teal text-sm font-bold px-3 py-2 rounded-lg hover:bg-teal-hover hover:text-white transition-colors">
-          <Percent className="w-4 h-4" /> Taux
-        </Link>
+      {!roleLoading && role === "DIRECTEUR" && (
+        <>
+            <Link href="/taux" className="flex items-center gap-2 bg-teal/10 text-teal text-sm font-bold px-3 py-2 rounded-lg hover:bg-teal-hover hover:text-white transition-colors">
+              <Percent className="w-4 h-4" /> Taux
+            </Link>
+            <Link href="/agents" className="flex items-center gap-2 bg-teal/10 text-teal text-sm font-bold px-3 py-2 rounded-lg hover:bg-teal-hover hover:text-white transition-colors">
+              <ShieldUser className="w-4 h-4" /> Agents
+            </Link>
+        </>
       )}
       <Link href="/notifications" className="flex items-center gap-2 bg-teal/10 text-teal text-sm font-bold px-3 py-2 rounded-lg hover:bg-teal-hover hover:text-white transition-colors">
         <Mail className="w-4 h-4" /> Notif
       </Link>
-      {role === "DIRECTEUR" && (
-        <Link href="/agents" className="flex items-center gap-2 bg-teal/10 text-teal text-sm font-bold px-3 py-2 rounded-lg hover:bg-teal-hover hover:text-white transition-colors">
-          <ShieldUser className="w-4 h-4" /> Agents
-        </Link>
-      )}
       <button onClick={openTxModal} className="flex items-center gap-2 bg-teal text-charcoal text-sm font-bold px-3 py-2 rounded-lg hover:bg-teal-hover transition-colors">
         <PlusCircle className="w-4 h-4" /> Transaction
       </button>
     </>
   );
+
+  // ... (reste du Header)
 
   return (
     <header className="sticky top-0 h-16 border-b border-border bg-charcoal z-20 flex items-center justify-between px-4">
@@ -100,7 +94,7 @@ export function Header() {
           
           <div className="absolute right-0 top-full mt-2 w-48 bg-charcoal/90 backdrop-blur-xl border border-white/10 rounded-xl overflow-hidden shadow-2xl opacity-0 translate-y-2 pointer-events-none group-hover:opacity-100 group-hover:translate-y-0 group-hover:pointer-events-auto transition-all z-50">
             <div className="px-4 py-2 border-b border-white/5">
-              <p className="text-[10px] uppercase text-white/40">Rôle : {role.replace("_", " ")}</p>
+              <p className="text-[10px] uppercase text-white/40">Rôle : {role ? role.replace("_", " ") : "Chargement..."}</p>
             </div>
             <Link href="/profile/password" className="block px-4 py-3 text-xs font-medium hover:bg-white/5 transition-colors border-b border-white/5">
               Modifier Mot de Passe

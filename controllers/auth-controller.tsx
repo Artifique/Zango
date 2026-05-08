@@ -1,69 +1,68 @@
 "use client";
 
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
+import { supabase } from "../lib/supabase";
+import { useRouter } from "next/navigation";
 
 interface AuthState {
-  isAuthenticated: boolean;
-  username: string;
+  user: any;
+  loading: boolean;
 }
 
 interface AuthControllerValue extends AuthState {
-  isBootstrapping: boolean;
-  login: (username: string, password: string) => boolean;
-  logout: () => void;
+  username: string | null;
+  login: (email: string, password: string) => Promise<{ data: any; error: any }>;
+  logout: () => Promise<void>;
 }
 
-const STORAGE_KEY = "kalyce-auth";
 const AuthControllerContext = createContext<AuthControllerValue | null>(null);
 
 export function AuthControllerProvider({ children }: { children: React.ReactNode }) {
-  const [isBootstrapping, setIsBootstrapping] = useState(true);
-  const [state, setState] = useState<AuthState>({
-    isAuthenticated: false,
-    username: "",
-  });
+  const [user, setUser] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const router = useRouter();
 
   useEffect(() => {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (raw) {
-        const parsed = JSON.parse(raw) as AuthState;
-        setState(parsed);
-      }
-    } finally {
-      setIsBootstrapping(false);
-    }
+    // Initialiser l'état de l'utilisateur
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
+      setLoading(false);
+    });
+
+    // Écouter les changements de session
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+      setLoading(false);
+    });
+    
+    return () => subscription.unsubscribe();
   }, []);
 
-  const login = (username: string, password: string) => {
-    if (!username.trim() || !password.trim()) {
-      return false;
+  const login = async (email: string, password: string) => {
+    const result = await supabase.auth.signInWithPassword({ email, password });
+    if (!result.error) {
+      setUser(result.data.user);
     }
-
-    const nextState = {
-      isAuthenticated: true,
-      username: username.trim(),
-    };
-
-    setState(nextState);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(nextState));
-    return true;
+    return result;
   };
 
-  const logout = () => {
-    const nextState = { isAuthenticated: false, username: "" };
-    setState(nextState);
-    localStorage.removeItem(STORAGE_KEY);
+  const logout = async () => {
+    await supabase.auth.signOut();
+    setUser(null);
+    router.push("/login");
   };
+
+  const username = user?.email || null;
 
   const value = useMemo(
     () => ({
-      ...state,
-      isBootstrapping,
+      user,
+      loading,
+      username,
       login,
       logout,
     }),
-    [state, isBootstrapping],
+    [user, loading, username],
   );
 
   return <AuthControllerContext.Provider value={value}>{children}</AuthControllerContext.Provider>;

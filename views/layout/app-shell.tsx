@@ -10,17 +10,17 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
 
-  const { isAuthenticated, isBootstrapping } = useAuthController();
+  const { user, loading } = useAuthController();
 
   useEffect(() => {
-    if (!isBootstrapping && !isAuthenticated) {
+    if (!loading && !user) {
       router.replace("/login");
     }
-  }, [isAuthenticated, isBootstrapping, router]);
+  }, [user, loading, router]);
 
-  if (isBootstrapping || !isAuthenticated) {
+  if (loading || !user) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center" suppressHydrationWarning={true}>
         <p className="text-white/40 font-mono text-sm uppercase tracking-wider">Vérification session...</p>
       </div>
     );

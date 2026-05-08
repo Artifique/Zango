@@ -1,28 +1,58 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { AppShell } from "../../views/layout/app-shell";
 import { useRoleController } from "../../controllers/role-controller";
+import { AgentService } from "../../controllers/data-services";
 import { Modal } from "../../components/modals/modal";
-import { Plus } from "lucide-react";
+import { Plus, ChevronLeft, ChevronRight } from "lucide-react";
 
 interface Agent {
   id: string;
-  name: string;
-  transactions: number;
-  ca: number;
+  nom: string;
+  email: string;
 }
 
-const MOCK_AGENTS: Agent[] = [
-  { id: "A001", name: "Alex K.", transactions: 12, ca: 1240000 },
-  { id: "A002", name: "Jean D.", transactions: 8, ca: 850000 },
-];
-
 export default function AgentsPage() {
-  const { role } = useRoleController();
+  const { role, loading: roleLoading } = useRoleController();
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [agents] = useState<Agent[]>(MOCK_AGENTS);
+  const [agents, setAgents] = useState<Agent[]>([]);
+  const [loading, setLoading] = useState(true);
+  
+  const [nom, setNom] = useState("");
+  const [email, setEmail] = useState("");
+  
+  const [page, setPage] = useState(1);
+  const itemsPerPage = 5;
 
+  const fetchAgents = () => {
+    AgentService.getAll().then((data) => {
+      setAgents(data);
+      setLoading(false);
+    });
+  };
+
+  useEffect(() => { fetchAgents(); }, []);
+
+  const handleAdd = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      await AgentService.create(nom, email);
+      setIsModalOpen(false);
+      setNom("");
+      setEmail("");
+      fetchAgents();
+    } catch (err: any) {
+      alert("Erreur lors de la création : " + (err.message || "Veuillez vérifier l'email."));
+    }
+  };
+
+  const paginatedAgents = useMemo(() => {
+    const start = (page - 1) * itemsPerPage;
+    return agents.slice(start, start + itemsPerPage);
+  }, [agents, page]);
+
+  if (roleLoading) return <AppShell><p className="text-white/40">Chargement...</p></AppShell>;
   if (role !== "DIRECTEUR") return <AppShell><p className="text-white/40">Accès refusé.</p></AppShell>;
 
   return (
@@ -36,29 +66,42 @@ export default function AgentsPage() {
         </div>
 
         <div className="glass-card rounded-2xl p-6">
-          <table className="w-full text-left">
-            <thead>
-              <tr className="border-b border-white/5 text-[10px] uppercase text-white/40">
-                <th className="px-6 py-4">Nom</th>
-                <th className="px-6 py-4">Transactions</th>
-                <th className="px-6 py-4">CA Journalier</th>
-              </tr>
-            </thead>
-            <tbody>
-              {agents.map(a => (
-                <tr key={a.id} className="border-b border-white/5">
-                  <td className="px-6 py-4">{a.name}</td>
-                  <td className="px-6 py-4 font-mono">{a.transactions}</td>
-                  <td className="px-6 py-4 font-mono">{a.ca.toLocaleString()} XOF</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          {loading ? (
+            <p className="text-white/40">Chargement...</p>
+          ) : (
+            <div className="space-y-4">
+              <table className="w-full text-left">
+                <thead>
+                  <tr className="border-b border-white/5 text-[10px] uppercase text-white/40">
+                    <th className="px-6 py-4">Nom</th>
+                    <th className="px-6 py-4">Email</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {paginatedAgents.map(a => (
+                    <tr key={a.id} className="border-b border-white/5">
+                      <td className="px-6 py-4">{a.nom}</td>
+                      <td className="px-6 py-4">{a.email}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              <div className="flex items-center justify-between text-xs text-white/40 px-6">
+                <span>Page {page} de {Math.ceil(agents.length / itemsPerPage) || 1}</span>
+                <div className="flex gap-2">
+                  <button onClick={() => setPage(p => Math.max(1, p - 1))} className="p-2 hover:bg-white/5 rounded-lg"><ChevronLeft className="w-4 h-4" /></button>
+                  <button onClick={() => setPage(p => p + 1)} className="p-2 hover:bg-white/5 rounded-lg"><ChevronRight className="w-4 h-4" /></button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
       <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="Ajouter Agent">
-        <form className="space-y-4">
-            <input className="w-full bg-white/5 p-2 rounded border border-white/10" placeholder="Nom de l'agent" />
+        <form onSubmit={handleAdd} className="space-y-4">
+            <input value={nom} onChange={e => setNom(e.target.value)} className="w-full bg-white/5 p-2 rounded border border-white/10" placeholder="Nom de l'agent" required />
+            <input type="email" value={email} onChange={e => setEmail(e.target.value)} className="w-full bg-white/5 p-2 rounded border border-white/10" placeholder="Email" required />
+            <p className="text-xs text-white/40">Mot de passe par défaut : Agent123!</p>
             <button className="w-full bg-teal text-charcoal font-bold p-2 rounded">Créer</button>
         </form>
       </Modal>

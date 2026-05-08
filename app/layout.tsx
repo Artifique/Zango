@@ -31,7 +31,7 @@ export default function RootLayout({
         suppressHydrationWarning
         className={`${syne.variable} ${ibmPlexMono.variable} font-sans antialiased bg-background text-foreground selection:bg-teal selection:text-background`}
       >
-        <div className="grid-background" />
+        <div className="grid-background" suppressHydrationWarning={true} />
         <Providers>{children}</Providers>
       </body>
     </html>

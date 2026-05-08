@@ -14,10 +14,15 @@ CREATE TABLE agents (
 
 -- 2. Table des Clients
 CREATE TABLE clients (
-  id TEXT PRIMARY KEY, -- CLI-xxxx
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   nom_complet TEXT NOT NULL,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
+
+-- Policies pour clients
+ALTER TABLE clients ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Utilisateurs connectés peuvent lire les clients" ON clients FOR SELECT USING (auth.role() = 'authenticated');
+CREATE POLICY "Utilisateurs connectés peuvent ajouter des clients" ON clients FOR INSERT WITH CHECK (auth.role() = 'authenticated');
 
 -- 3. Table des Taux
 CREATE TABLE rates (

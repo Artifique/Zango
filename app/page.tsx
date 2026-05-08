@@ -8,18 +8,33 @@ import { useNotifications } from "../lib/notification-context";
 import { useRoleController } from "../controllers/role-controller";
 import { useAuthController } from "../controllers/auth-controller";
 import { TransactionService } from "../controllers/transaction-controller";
+import { ClientService, RateService, AgentService, NotificationService } from "../controllers/data-services";
 import { Transaction } from "../types/supabase-models";
 
 export default function DashboardPage() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [clients, setClients] = useState<any[]>([]);
+  const [rates, setRates] = useState<any[]>([]);
+  const [agents, setAgents] = useState<any[]>([]);
   const [isClientModalOpen, setIsClientModalOpen] = useState(false);
   const [isTxModalOpen, setIsTxModalOpen] = useState(false);
-  const { sendNotification } = useNotifications();
+  const [montant, setMontant] = useState("");
+  const [taux, setTaux] = useState("");
+
   const { role } = useRoleController();
-  const { username } = useAuthController();
+  const { user } = useAuthController();
+
+  const usd = useMemo(() => {
+    const m = parseFloat(montant);
+    const t = parseFloat(taux);
+    return (m && t && t !== 0) ? (m / t).toFixed(2) : "0.00";
+  }, [montant, taux]);
 
   useEffect(() => {
-    TransactionService.getAll().then(setTransactions).catch(console.error);
+    TransactionService.getAll().then(setTransactions);
+    ClientService.getAll().then(setClients);
+    RateService.getAll().then(setRates);
+    AgentService.getAll().then(setAgents);
   }, []);
 
   if (typeof window !== 'undefined') {
@@ -27,17 +42,51 @@ export default function DashboardPage() {
     window.addEventListener('open-tx-modal', () => setIsTxModalOpen(true));
   }
 
-  const handleCreateTx = (e: React.FormEvent) => {
+  const handleCreateTx = async (e: React.FormEvent) => {
     e.preventDefault();
-    sendNotification("TXN-" + Math.floor(Math.random()*1000), "Agent cible");
-    setIsTxModalOpen(false);
+    const form = e.target as any;
+    const montantVal = parseFloat(montant);
+    const tauxVal = parseFloat(taux);
+    const usdVal = montantVal / tauxVal;
+    const clientId = form[3].value;
+    const agentId = form[4].value;
+
+    try {
+        await TransactionService.create({
+            amount: montantVal,
+            rate: tauxVal,
+            usdValue: usdVal,
+            clientId,
+            agentId,
+            status: 'EN_ATTENTE',
+            date: new Date().toISOString()
+        } as any);
+
+        await NotificationService.send("TXN-...", agentId, user.id, "Veuillez confirmer cette transaction.");
+        setIsTxModalOpen(false);
+        TransactionService.getAll().then(setTransactions);
+    } catch (err: any) {
+        console.error("Erreur complète:", err);
+        const errorMessage = err?.message || err?.error?.message || "Une erreur inconnue est survenue.";
+        alert("Erreur transaction: " + errorMessage);
+    }
+  };
+
+  const handleCreateClient = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const target = e.target as typeof e.target & {
+      clientName: { value: string };
+    };
+    await ClientService.create(target.clientName.value);
+    setIsClientModalOpen(false);
+    ClientService.getAll().then(setClients);
   };
 
   const userTransactions = useMemo(() => {
     return role === "DIRECTEUR" 
       ? transactions 
-      : transactions.filter(t => t.agentName === (username || "Alex K."));
-  }, [role, username, transactions]);
+      : transactions.filter(t => t.agentId === user?.id);
+  }, [role, user, transactions]);
 
   const metrics = useMemo(() => {
     const totalXof = userTransactions.reduce((acc, t) => acc + (Number(t.amount) || 0), 0);
@@ -79,22 +128,35 @@ export default function DashboardPage() {
           </div>
         </div>
       </div>
-
       <Modal isOpen={isClientModalOpen} onClose={() => setIsClientModalOpen(false)} title="Nouveau Client">
-        <form className="space-y-4">
-            <div><label className="block text-sm text-white/60">ID (Auto-généré)</label><input disabled className="w-full bg-white/5 p-2 rounded border border-white/10" value="CLI-8821" /></div>
-            <div><label className="block text-sm text-white/60">Nom complet</label><input className="w-full bg-white/5 p-2 rounded border border-white/10" placeholder="Entrez le nom..." /></div>
-            <button className="w-full bg-teal text-charcoal font-bold p-2 rounded">Ajouter</button>
+        <form onSubmit={handleCreateClient} className="space-y-4">
+            <div>
+              <label className="block text-sm text-white/60">Nom complet</label>
+              <input name="clientName" className="w-full bg-white/5 p-2 rounded border border-white/10" placeholder="Entrez le nom..." required />
+            </div>
+            <button type="submit" className="w-full bg-teal text-charcoal font-bold p-2 rounded">Ajouter</button>
         </form>
       </Modal>
 
       <Modal isOpen={isTxModalOpen} onClose={() => setIsTxModalOpen(false)} title="Nouvelle Transaction">
         <form onSubmit={handleCreateTx} className="space-y-3">
-          <div><label className="block text-sm text-white/60">Montant</label><input type="number" className="w-full bg-white/5 p-2 rounded border border-white/10" required /></div>
-          <div><label className="block text-sm text-white/60">USD</label><input type="number" className="w-full bg-white/5 p-2 rounded border border-white/10" required /></div>
-          <div><label className="block text-sm text-white/60">Taux</label><select className="w-full bg-white/5 p-2 rounded border border-white/10"><option>600</option><option>610</option></select></div>
-          <div><label className="block text-sm text-white/60">Client</label><select className="w-full bg-white/5 p-2 rounded border border-white/10"><option>Jean Dupont</option></select></div>
-          <div><label className="block text-sm text-white/60">Agent</label><select className="w-full bg-white/5 p-2 rounded border border-white/10"><option>Alex K.</option></select></div>
+          <div>
+            <label className="block text-sm text-white/60">Montant</label>
+            <input type="number" value={montant} onChange={e => setMontant(e.target.value)} className="w-full bg-white/5 p-2 rounded border border-white/10" required />
+          </div>
+          <div>
+            <label className="block text-sm text-white/60">Taux</label>
+            <select value={taux} onChange={e => setTaux(e.target.value)} className="w-full bg-white/5 p-2 rounded border border-white/10 text-black dark:text-white" required>
+              <option value="" className="text-black">Sélectionner un taux</option>
+              {rates.map(r => <option key={r.id} value={r.valeur} className="text-black">{r.type} ({r.valeur})</option>)}
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm text-white/60">USD (Calculé)</label>
+            <input type="number" value={usd} className="w-full bg-white/5 p-2 rounded border border-white/10 opacity-70" readOnly />
+          </div>
+          <div><label className="block text-sm text-white/60">Client</label><select className="w-full bg-white/5 p-2 rounded border border-white/10 text-black dark:text-white" required>{clients.map(c => <option key={c.id} value={c.id} className="text-black">{c.nom_complet}</option>)}</select></div>
+          <div><label className="block text-sm text-white/60">Agent</label><select className="w-full bg-white/5 p-2 rounded border border-white/10 text-black dark:text-white" required>{agents.map(a => <option key={a.id} value={a.id} className="text-black">{a.nom}</option>)}</select></div>
           <button type="submit" className="w-full bg-teal text-charcoal font-bold p-2 rounded">Valider</button>
         </form>
       </Modal>
