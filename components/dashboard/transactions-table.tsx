@@ -7,9 +7,11 @@ import { Transaction } from "../../types/supabase-models";
 import { cn } from "../../lib/utils";
 
 export function TransactionsTable({ 
-  transactions 
+  transactions,
+  compact = false
 }: { 
-  transactions: Transaction[]
+  transactions: Transaction[];
+  compact?: boolean;
 }) {
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
@@ -85,8 +87,8 @@ export function TransactionsTable({
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between gap-4">
-        <div className="relative group w-full md:w-64">
+      <div className={cn("flex gap-3", compact ? "flex-col items-stretch" : "items-center justify-between")}>
+        <div className={cn("relative group w-full", !compact && "md:w-64")}>
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30" />
           <input
             type="text"
@@ -96,7 +98,7 @@ export function TransactionsTable({
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
-        <button onClick={exportToExcel} className="flex items-center gap-2 bg-teal/10 text-teal px-4 py-2 rounded-lg text-sm font-bold hover:bg-teal/20">
+        <button onClick={exportToExcel} className={cn("flex items-center justify-center gap-2 bg-teal/10 text-teal px-4 py-2 rounded-lg text-sm font-bold hover:bg-teal/20", compact && "w-full")}>
           <Download className="w-4 h-4" /> Exporter Excel
         </button>
       </div>
@@ -105,23 +107,23 @@ export function TransactionsTable({
         <table className="w-full text-left border-collapse">
           <thead>
             <tr className="bg-teal/10 border-b border-teal/20 text-[11px] font-bold uppercase tracking-wider text-teal">
-              <th className="px-6 py-4 border-r border-teal/20">Montant</th>
-              <th className="px-6 py-4 border-r border-teal/20">Taux</th>
-              <th className="px-6 py-4 border-r border-teal/20">USDT</th>
-              <th className="px-6 py-4 border-r border-teal/20">Client</th>
-              <th className="px-6 py-4 border-r border-teal/20">Agent</th>
-              <th className="px-6 py-4">Date</th>
+              <th className={cn("py-4 border-r border-teal/20", compact ? "px-3" : "px-6")}>Montant</th>
+              <th className={cn("py-4 border-r border-teal/20", compact ? "px-3" : "px-6")}>Taux</th>
+              <th className={cn("py-4 border-r border-teal/20", compact ? "px-3" : "px-6")}>USDT</th>
+              <th className={cn("py-4 border-r border-teal/20", compact ? "px-3" : "px-6")}>Client</th>
+              {!compact && <th className="px-6 py-4 border-r border-teal/20">Agent</th>}
+              <th className={cn("py-4", compact ? "px-3" : "px-6")}>Date</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-teal/10">
             {paginated.map((tx) => (
               <tr key={tx.id} className="hover:bg-white/5 transition-colors">
-                <td className="px-6 py-4 font-mono text-sm border-r border-teal/10">{tx.amount ? tx.amount.toLocaleString() : "0"}</td>
-                <td className="px-6 py-4 font-mono text-sm border-r border-teal/10">{tx.rate || "N/A"}</td>
-                <td className="px-6 py-4 font-mono text-sm border-r border-teal/10">{tx.usdValue ? tx.usdValue.toLocaleString() : "0"}</td>
-                <td className="px-6 py-4 text-sm border-r border-teal/10">{tx.clientName || "N/A"}</td>
-                <td className="px-6 py-4 text-sm border-r border-teal/10">{tx.agentName || "N/A"}</td>
-                <td className="px-6 py-4 text-sm text-white/50">{tx.date}</td>
+                <td className={cn("font-mono text-sm border-r border-teal/10", compact ? "px-3 py-2.5" : "px-6 py-4")}>{tx.amount ? tx.amount.toLocaleString() : "0"}</td>
+                <td className={cn("font-mono text-sm border-r border-teal/10", compact ? "px-3 py-2.5" : "px-6 py-4")}>{tx.rate || "N/A"}</td>
+                <td className={cn("font-mono text-sm border-r border-teal/10", compact ? "px-3 py-2.5" : "px-6 py-4")}>{tx.usdValue ? tx.usdValue.toLocaleString() : "0"}</td>
+                <td className={cn("text-sm border-r border-teal/10", compact ? "px-3 py-2.5" : "px-6 py-4")}>{tx.clientName || "N/A"}</td>
+                {!compact && <td className="px-6 py-4 text-sm border-r border-teal/10">{tx.agentName || "N/A"}</td>}
+                <td className={cn("text-sm text-white/50", compact ? "px-3 py-2.5" : "px-6 py-4")}>{tx.date}</td>
               </tr>
             ))}
           </tbody>

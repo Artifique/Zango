@@ -51,10 +51,20 @@ export function Header() {
 
   return (
     <header className="sticky top-0 h-16 border-b border-border bg-charcoal z-20 flex items-center justify-between px-4">
-      <div className="flex items-center gap-2">
-        <Image src="/logo.png" alt="Logo" width={32} height={32} />
-        <span className="font-syne font-bold text-lg tracking-tight ml-1">alyce</span>
-      </div>
+      <Link href="/" className="flex items-center gap-3 group">
+        {/* Card de marque : logo sur fond blanc + texte "alyce" */}
+        <div className="flex items-center gap-2.5 bg-white/10 border border-white/15 backdrop-blur-sm rounded-xl px-3 py-1.5 shadow-sm group-hover:bg-white/15 group-hover:border-white/25 group-hover:shadow-teal/20 group-hover:shadow-md transition-all duration-300">
+          {/* Logo dans un badge blanc pour que le K noir ressorte */}
+          <div className="flex items-center justify-center w-11 h-11 rounded-lg bg-white shadow-inner flex-shrink-0">
+            <Image src="/logo.png" alt="Kalyce logo" width={36} height={36} className="object-contain" />
+          </div>
+          {/* Nom "alyce" → forme "Kalyce" avec le K du logo */}
+          <div className="flex flex-col leading-none">
+            <span className="font-syne font-black text-base tracking-tight text-white">alyce</span>
+            <span className="text-[9px] font-mono text-teal/70 uppercase tracking-widest">by Kalyce</span>
+          </div>
+        </div>
+      </Link>
 
       <div className="md:hidden">
         <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} className="p-2 text-white">
